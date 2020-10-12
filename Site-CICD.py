@@ -109,7 +109,7 @@ try:
 
     print(stdout)
 
-    sql = f"UPDATE `csg_automations`.`CICD` SET `status` = 'success',`buildNum` = {cbuildNum} WHERE `project` = 'csgwebsite';"
+    sql = f"UPDATE `csg_automations`.`CICD` SET `status` = 'success',`buildNum` = {buildNum} WHERE `project` = 'csgwebsite';"
 
     print(sql)
 
