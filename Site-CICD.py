@@ -4,15 +4,24 @@ import os
 import paramiko
 from scp import SCPClient
 import sys
-import hashlib
-import pyodbc
-import datetime
+import mysql.connector
+from discord_webhook import DiscordWebhook
+
 
 def progress(filename, size, sent):
     sys.stdout.write("%s\'s progress: %.2f%%   \r" % (filename, float(sent)/float(size)*100))
 
 
+# ----- Start script -----
 password = sys.argv[1]
+
+buildchannelid = sys.argv[2]
+
+buri = "https://discordapp.com/api/webhooks/{}".format(buildchannelid)
+
+alertchannelid = sys.argv[3]
+
+auri = "https://discordapp.com/api/webhooks/{}".format(alertchannelid)
 
 # Download the build file
 print("Downloading file")
@@ -21,68 +30,87 @@ url = "https://github.com/ius-csg/csghomepage/releases/download/latest/release.z
 
 file = "./CSGSite.zip"
 
-wget.download(url, file, wget.bar_thermometer)
+wget.download(url, file)
 
-# Talk to db and compare the build numbers
-
-# if same stop
-
-# if different continue and update
-
-
-# Talk to db and compare the hashes
-# conn = pyodbc.connect('Driver=MySQL ODBC 8.0 ANSI Driver;'
-#                       'Server=192.168.1.101;'
-#                       'Database=csg_automation;'
-#                       'Trusted_Connection=yes;'
-#                       'UID=app0005;'
-#                       'PWD={};'.format(password))
-#
-# cursor = conn.cursor()
-#
-# currentHash = cursor.execute( "SELECT hash,  FROM csg_automations.CI/CD where project = \"CI/CD\" and datetimeInserted=(SELECT MAX(datetimeInserted) FROM csg_automations.CI/CD WHERE project = \"CI/CD\" )")
-#
-# # Stop execution since their is no change in the release
-# if currentHash == thisHash:
-#     exit(0)
-#
-# cursor.execute("INSERT INTO csg_automations.CI/CD (project , hash, datetimeInserted ) VALUES ( \"CI/CD\", \"{}\",\"{}\");".format(thisHash, datetime.datetime.now()))
-
-
-
-# Set up ssh connection
-
-ssh = paramiko.SSHClient()
-
-ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+print("Unzipping file")
 
 with ZipFile(file, 'r') as zipObj:
     zipObj.extractall("./release")
 
-ssh.connect("192.168.3.4", 22, "root", "local#123")
+# Get build number
+with open("release/_site/BUILD_NUMBER") as f:
+    bfile = f.read()
 
-scp = SCPClient(ssh.get_transport(), progress=progress)
+buildNum = [int(i) for i in bfile.split() if i.isdigit()][0]
 
-stdin, stdout, stderr = ssh.exec_command('cd /var/www/csghomepage/')
+try:
+    conn = mysql.connector.connect(
+        user="app0005",
+        password=password,
+        host="192.168.1.101",
+        port=3306,
+        database="csg_automations"
+    )
 
-print(stdout)
+except mysql.connector.Error as e:
+    print(f"Error connecting to MariaDB Platform: {e}")
+    sys.exit(1)
 
-scp.put('./release/_site', 'temp', True)
+print("Connecting to database ")
 
-stdin, stdout, stderr = ssh.exec_command('mv _site _site.old')
+cursor = conn.cursor()
 
-print(stdout)
+# Talk to db and compare the build numbers
+cursor.execute("SELECT * FROM csg_automations.CICD WHERE project='csgwebsite'")
 
-stdin, stdout, stderr = ssh.exec_command('mv temp _site')
+cbuild = cursor.fetchone()
 
-print(stdout)
+# if same stop otherwise continue and update
+if cbuild is None:
+    # if empty insert new build
+    cursor.execute(f"INSERT INTO `csg_automations`.`CICD` (`project`,`buildNum`,`status`) VALUES ('csgwebsite', {buildNum}, 'pending');")
+    conn.commit()
+    print("CSGWebsite build was updated")
+else:
+    cbuildNum = cbuild[2]
+    status = cbuild[3]
+    if cbuildNum is buildNum and status == 'success':
+        print("Build Version the same")
+        sys.exit(0)
 
-stdin, stdout, stderr = ssh.exec_command('rm -rf _site.old')
+# try to connect to the server and update the site
+try:
+    # Set up ssh connection
+    ssh = paramiko.SSHClient()
 
-print(stdout)
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-print("Cleaning up local directory")
+    ssh.connect(hostname="192.168.3.4", port=22, username='root', password="local#123")
 
-os.remove("CSGSite.zip")
+    with SCPClient(ssh.get_transport()) as scp:
+        scp.put('./release/_site', '/var/www/csghomepage/temp', recursive=True)  # Copy my_file.txt to the server
 
-os.rmdir("./release")
+    stdin, stdout, stderr = ssh.exec_command('cd /var/www/csghomepage/; mv _site _site.old; mv temp _site; rm -rf _site.old;')
+
+    print(stdout)
+
+    cursor.execute("UPDATE `csg_automations`.`CICD` SET `status` = 'success' WHERE `project` = 'csgwebsite';")
+    conn.commit()
+    print("CSGWebsite build was updated successfully")
+
+    webhook = DiscordWebhook(url=buri, content='CSG Website was successfully deployed. :white_check_mark: ')
+    response = webhook.execute()
+
+except:
+    cursor.execute("UPDATE `csg_automations`.`CICD` SET `status` = 'failed' WHERE `project` = 'csgwebsite';")
+    conn.commit()
+    print("CSGWEBSITE deployment failed")
+    webhook = DiscordWebhook(url=auri, content=' :warning: CSG Website deployment failed. !!! :warning:')
+    response = webhook.execute()
+
+finally:
+    print("Cleaning up local directory")
+
+    os.remove("CSGSite.zip")
+
+    os.rmdir("./release")
