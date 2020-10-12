@@ -76,15 +76,16 @@ if cbuild is None:
     # if empty insert new build
     cursor.execute(f"INSERT INTO `csg_automations`.`CICD` (`project`,`buildNum`,`status`) VALUES ('csgwebsite', {buildNum}, 'pending');")
     conn.commit()
-    print("CSGWebsite build was updated")
+    print("CSGWebsite build was added to the database. \n Continuing with deployment.")
+
 else:
     cbuildNum = cbuild[2]
     status = cbuild[3]
     if cbuildNum is buildNum and status == 'success':
         print("Build Version the same")
         sys.exit(0)
+    print(f"build number is:{cbuildNum}")
 
-print(f"build number is:{cbuildNum}")
 # try to connect to the server and update the site
 try:
     print("Creating ssh connection")
