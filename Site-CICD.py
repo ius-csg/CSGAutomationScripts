@@ -30,10 +30,12 @@ print("Downloading file")
 url = "https://github.com/ius-csg/csghomepage/releases/download/latest/release.zip"
 
 file = "./CSGSite.zip"
-
-open(file, 'wb').write(requests.get(url, allow_redirects=True).content)
-
-#wget.download(url, file)
+try:
+    open(file, 'wb').write(requests.get(url, allow_redirects=True).content)
+except requests.exceptions as e:
+    print(e)
+except os.error as e:
+    print(e)
 
 print("Unzipping file")
 
@@ -47,6 +49,7 @@ with open("release/_site/BUILD_NUMBER") as f:
 buildNum = [int(i) for i in bfile.split() if i.isdigit()][0]
 
 try:
+    print("Connecting to database.")
     conn = mysql.connector.connect(
         user="app0005",
         password=password,
@@ -59,7 +62,7 @@ except mysql.connector.Error as e:
     print(f"Error connecting to MariaDB Platform: {e}")
     sys.exit(1)
 
-print("Connecting to database ")
+print("Successful connection to database.")
 
 cursor = conn.cursor()
 
@@ -81,14 +84,18 @@ else:
         print("Build Version the same")
         sys.exit(0)
 
+print(f"build number is:{cbuildNum}")
 # try to connect to the server and update the site
 try:
+    print("Creating ssh connection")
     # Set up ssh connection
     ssh = paramiko.SSHClient()
 
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     ssh.connect(hostname="192.168.3.4", port=22, username='root', password="local#123")
+
+    print("uploading files")
 
     with SCPClient(ssh.get_transport()) as scp:
         scp.put('./release/_site', '/var/www/csghomepage/temp', recursive=True)  # Copy my_file.txt to the server
@@ -101,19 +108,26 @@ try:
     conn.commit()
     print("CSGWebsite build was updated successfully")
 
+    print("sending discord message")
     webhook = DiscordWebhook(url=buri, content='CSG Website was successfully deployed. :white_check_mark: ')
     response = webhook.execute()
 
+    fail = False
+
 except:
+    print("updating database")
     cursor.execute("UPDATE `csg_automations`.`CICD` SET `status` = 'failed' WHERE `project` = 'csgwebsite';")
     conn.commit()
     print("CSGWEBSITE deployment failed")
     webhook = DiscordWebhook(url=auri, content=' :warning: CSG Website deployment failed. !!! :warning:')
     response = webhook.execute()
-
+    fail = True
 finally:
     print("Cleaning up local directory")
 
     os.remove("CSGSite.zip")
 
     shutil.rmtree("./release")
+
+if not fail:
+    exit(1)
