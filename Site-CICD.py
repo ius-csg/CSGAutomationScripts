@@ -115,7 +115,7 @@ try:
     webhook = DiscordWebhook(url=buri, content='CSG Website was successfully deployed. :white_check_mark: ')
     response = webhook.execute()
 
-    fail = False
+
 
 except:
     print("FAILURE!!! updating database")
@@ -124,13 +124,15 @@ except:
     print("CSGWEBSITE deployment failed")
     webhook = DiscordWebhook(url=auri, content=' :warning: CSG Website deployment failed. !!! :warning:')
     response = webhook.execute()
-    fail = True
+    fail = False
 finally:
     print("Cleaning up local directory")
 
     os.remove("CSGSite.zip")
 
     shutil.rmtree("./release")
+
+    fail = True
 
 if not fail:
     exit(1)
