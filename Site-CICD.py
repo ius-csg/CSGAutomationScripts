@@ -109,15 +109,17 @@ try:
 
     print(stdout)
 
-    cursor.execute(f"UPDATE `csg_automations`.`CICD` SET `status` = 'success',`buildNum` = {cbuildNum} WHERE `project` = 'csgwebsite';")
+    sql = f"UPDATE `csg_automations`.`CICD` SET `status` = 'success',`buildNum` = {cbuildNum} WHERE `project` = 'csgwebsite';"
+
+    print(sql)
+
+    cursor.execute(sql)
     conn.commit()
     print("CSGWebsite build was updated successfully")
 
     print("sending discord message")
     webhook = DiscordWebhook(url=buri, content='CSG Website was successfully deployed. :white_check_mark: ')
     response = webhook.execute()
-
-
 
 except:
     print("FAILURE!!! updating database")
