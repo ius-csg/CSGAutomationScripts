@@ -24,6 +24,8 @@ alertchannelid = sys.argv[3]
 
 auri = "https://discordapp.com/api/webhooks/{}".format(alertchannelid)
 
+webpassword = sys.argv[4]
+
 # Download the build file
 print("Downloading file")
 
@@ -94,7 +96,7 @@ try:
 
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-    ssh.connect(hostname="192.168.3.4", port=22, username='root', password="local#123")
+    ssh.connect(hostname="192.168.3.4", port=22, username='root', password=webpassword)
 
     print("uploading files")
 
