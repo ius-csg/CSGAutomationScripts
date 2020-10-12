@@ -90,12 +90,12 @@ else:
 
 # try to connect to the server and update the site
 try:
-    print("Creating ssh connection")
+
     # Set up ssh connection
     ssh = paramiko.SSHClient()
 
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
+    print("Creating ssh connection")
     ssh.connect(hostname="192.168.3.4", port=22, username='root', password=webpassword)
 
     print("uploading files")
