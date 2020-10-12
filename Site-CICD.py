@@ -73,6 +73,8 @@ cursor.execute("SELECT * FROM csg_automations.CICD WHERE project='csgwebsite'")
 
 cbuild = cursor.fetchone()
 
+print(cbuild)
+
 # if same stop otherwise continue and update
 if cbuild is None:
     # if empty insert new build
@@ -107,7 +109,7 @@ try:
 
     print(stdout)
 
-    cursor.execute("UPDATE `csg_automations`.`CICD` SET `status` = 'success' WHERE `project` = 'csgwebsite';")
+    cursor.execute(f"UPDATE `csg_automations`.`CICD` SET `status` = 'success',`buildNum` = {cbuildNum} WHERE `project` = 'csgwebsite';")
     conn.commit()
     print("CSGWebsite build was updated successfully")
 
