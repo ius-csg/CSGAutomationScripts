@@ -1,5 +1,6 @@
+import shutil
 from zipfile import ZipFile
-import wget
+import requests
 import os
 import paramiko
 from scp import SCPClient
@@ -30,7 +31,9 @@ url = "https://github.com/ius-csg/csghomepage/releases/download/latest/release.z
 
 file = "./CSGSite.zip"
 
-wget.download(url, file)
+open(file, 'wb').write(requests.get(url, allow_redirects=True).content)
+
+#wget.download(url, file)
 
 print("Unzipping file")
 
@@ -113,4 +116,4 @@ finally:
 
     os.remove("CSGSite.zip")
 
-    os.rmdir("./release")
+    shutil.rmtree("./release")
