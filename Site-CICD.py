@@ -116,9 +116,17 @@ try:
     response = webhook.execute()
 
     fail = False
+except paramiko.errors as e:
+    print("SSH FAILURE!!! updating database")
+    cursor.execute("UPDATE `csg_automations`.`CICD` SET `status` = 'failed' WHERE `project` = 'csgwebsite';")
+    conn.commit()
+    print("CSGWEBSITE deployment failed")
+    webhook = DiscordWebhook(url=auri, content=' :warning: CSG Website deployment failed. !!! :warning:')
+    response = webhook.execute()
+    fail = True
 
 except:
-    print("updating database")
+    print("FAILURE!!! updating database")
     cursor.execute("UPDATE `csg_automations`.`CICD` SET `status` = 'failed' WHERE `project` = 'csgwebsite';")
     conn.commit()
     print("CSGWEBSITE deployment failed")
