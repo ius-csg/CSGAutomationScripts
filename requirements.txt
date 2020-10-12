@@ -9,7 +9,6 @@ cryptography==3.1.1
 discord-webhook==0.9.0
 discord.py==1.5.0
 idna==2.10
-mariadb==1.0.3
 multidict==4.7.6
 mysql-connector-python==8.0.21
 paramiko==2.7.2
