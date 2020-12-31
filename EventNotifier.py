@@ -10,10 +10,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from dateutil.parser import parse
 
-
 parser = argparse.ArgumentParser(description='Take in secrets for this script.')
-parser.add_argument('--channelid',  help='a channel id for the accouncements' )
-parser.add_argument('--dbpassword',  help='password for the db')
+parser.add_argument('--channelid', help='a channel id for the accouncements')
+parser.add_argument('--dbpassword', help='password for the db')
 # parser.add_argument('--sum', dest='accumulate', action='store_const',
 #                    const=sum, default=max,
 #                    help='sum the integers (default: find the max)')
@@ -61,21 +60,27 @@ if not creds or not creds.valid:
     # Save the credentials for the next run
     with open('token.pickle', 'wb') as token:
         pickle.dump(creds, token)
-
-service = build('calendar', 'v3', credentials=creds)
+try:
+    service = build('calendar', 'v3', credentials=creds)
+except:
+    e = sys.exc_info()[0]
+    print(e)
+    exit(1)
 
 # Call the Calendar API
-now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
+now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
 print('fetching the closest 10 events')
-events_result = service.events().list(calendarId='iu.edu_ghkkngbm6i2qadsla4ktnpgi50@group.calendar.google.com', timeMin=now,
-                                    maxResults=10, singleEvents=True,
-                                    orderBy='startTime').execute()
+events_result = service.events().list(calendarId='iu.edu_ghkkngbm6i2qadsla4ktnpgi50@group.calendar.google.com',
+                                      timeMin=now,
+                                      maxResults=10, singleEvents=True,
+                                      orderBy='startTime').execute()
 events = events_result.get('items', [])
 
 if not events:
     print('No upcoming events found.')
 for event in events:
     eventid = event['id']
+    print(f"Processing {eventid}:'{event['summary']}'")
     epsilon = 30
     now = datetime.datetime.now()
     # Some events are deadlines which we put in as events that last all day.
@@ -90,7 +95,8 @@ for event in events:
         cursor.execute(f"SELECT * FROM csg_automations.eventNotification where eventID = '{eventid}'")
         data = cursor.fetchone()
         if data is None:
-            cursor.execute(f"INSERT INTO `csg_automations`.`eventNotification` (`eventId`,`type`) VALUES ('{eventid}', 'deadline' )")
+            cursor.execute(
+                f"INSERT INTO `csg_automations`.`eventNotification` (`eventId`,`type`) VALUES ('{eventid}', 'deadline' )")
             conn.commit()
             # Get the data that we just entered
             cursor.execute(f"SELECT * FROM csg_automations.eventNotification where eventID = '{eventid}'")
@@ -119,7 +125,6 @@ for event in events:
             print(response)
 
             # Send an email here if you want
-
 
         # 3 day alert
         if data[3] == 0 and (-epsilon < divmod(((now - deadline3d).total_seconds()), 60)[0] < epsilon):
