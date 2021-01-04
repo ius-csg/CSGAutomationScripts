@@ -136,7 +136,7 @@ for event in events:
             webhook = DiscordWebhook(url=uri,
                                      content=f"@everyone Hey reminder bot here,\n The CSG has a deadline for"
                                              f" {event['summary']} in 3 days. "
-                                             f"Please do not forget to sign up if your interested. \n"
+                                             f"Please do not forget to sign up if you are interested. \n"
                                              f"------------------------------"
                                              f"Details: {event['description']}")
             response = webhook.execute()
@@ -152,7 +152,7 @@ for event in events:
             webhook = DiscordWebhook(url=uri,
                                      content=f"@everyone Hey reminder bot here,\n The CSG has a deadline for"
                                              f" {event['summary']} in 1 days."
-                                             f" Please do not forget to sign up if your interested. \n"
+                                             f" Please do not forget to sign up if you are interested. \n"
                                              f"Tomorrow will be the last day to sign up."
                                              f"------------------------------"
                                              f"Details: {event['description']}")
@@ -187,7 +187,7 @@ for event in events:
             webhook = DiscordWebhook(url=uri, content=f"@everyone Hey reminder bot here,\n CSG will be hosting "
                                                       f"{event['summary']} in 3 days"
                                                       f" on the {eventTime.day} at {eventTime.time}."
-                                                      f"We hope to see everyone their!\n"
+                                                      f"We hope to see everyone there!\n"
                                                       f"------------------------------"
                                                       f"Details: {event['description']}")
             response = webhook.execute()
@@ -203,7 +203,7 @@ for event in events:
             webhook = DiscordWebhook(url=uri,
                                      content=f"@everyone Hey reminder bot here,\n CSG will be hosting {event['summary']}"
                                              f" tomorrow, the {eventTime.day} at {eventTime.time}. "
-                                             f"We hope to see everyone their!\n"
+                                             f"We hope to see everyone there!\n"
                                              f"------------------------------"
                                              f"Details: {event['description']}")
             response = webhook.execute()
