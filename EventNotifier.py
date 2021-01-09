@@ -102,14 +102,14 @@ for event in events:
             cursor.execute(f"SELECT * FROM csg_automations.eventNotification where eventID = '{eventid}'")
             data = cursor.fetchone()
 
-        # See if the time is within epsilon (15 minutes)
+        # See if the time is within epsilon
         deadline1w = (deadlineTime - datetime.timedelta(days=7)).replace(hour=12)
         deadline3d = (deadlineTime - datetime.timedelta(days=3)).replace(hour=12)
         deadline1d = (deadlineTime - datetime.timedelta(days=1)).replace(hour=12)
         # deadline1d = (parse(event['end']['date'])).replace(hour=12)
 
         # 1 week alert
-        if data[2] == 0 and (-epsilon < divmod(((now - deadline1w).total_seconds()), 60)[0] < epsilon):
+        if data[2] == 0 and (-epsilon < ((now-deadline1w).total_seconds())/60 < epsilon):
             # update db
             cursor.execute(
                 f"UPDATE `csg_automations`.`eventNotification` SET `oneWeek` = 1 WHERE `eventId` = {eventid};")
@@ -127,7 +127,7 @@ for event in events:
             # Send an email here if you want
 
         # 3 day alert
-        if data[3] == 0 and (-epsilon < divmod(((now - deadline3d).total_seconds()), 60)[0] < epsilon):
+        if data[3] == 0 and (-epsilon < ((now-deadline3d).total_seconds())/60 < epsilon):
             # update db
             cursor.execute(
                 f"UPDATE `csg_automations`.`eventNotification` SET `threeDay` = 1 WHERE `eventId` = {eventid};")
@@ -143,7 +143,7 @@ for event in events:
             print(response)
 
         # 1 day alert
-        if data[4] == 0 and (-epsilon < divmod(((now - deadline1d).total_seconds()), 60)[0] < epsilon):
+        if data[4] == 0 and (-epsilon < ((now-deadline1d).total_seconds())/60 < epsilon):
             # update db
             cursor.execute(
                 f"UPDATE `csg_automations`.`eventNotification` SET `oneDay` = 1 WHERE `eventId` = {eventid};")
@@ -178,7 +178,7 @@ for event in events:
             data = cursor.fetchone()
 
         # send an alert for 3 days before
-        if data[2] == 0 and (-epsilon < divmod(((now - event3d).total_seconds()), 60)[0] < epsilon):
+        if data[2] == 0 and (-epsilon < ((now-event3d).total_seconds())/60 < epsilon):
             # update db
             cursor.execute(
                 f"UPDATE `csg_automations`.`eventNotification` SET `threeday` = 1 WHERE `eventId` = {eventid}")
@@ -194,7 +194,7 @@ for event in events:
             print(response)
 
         # send an alert for 1 day before
-        if data[4] == 0 and (-epsilon < divmod(((now - event1d).total_seconds()), 60)[0] < epsilon):
+        if data[4] == 0 and (-epsilon < ((now-event1d).total_seconds())/60 < epsilon):
             # update db
             cursor.execute(
                 f"UPDATE `csg_automations`.`eventNotification` SET `oneDay` = 1 WHERE `eventId` = {eventid}")
@@ -209,8 +209,8 @@ for event in events:
             response = webhook.execute()
             print(response)
 
-        # send an alert for 3 days before
-        if data[5] == 0 and (-epsilon < divmod(((now - event30min).total_seconds()), 60)[0] < epsilon):
+        # send an alert for 30 minutes before
+        if data[5] == 0 and (-epsilon < ((now-event30min).total_seconds())/60 < epsilon):
             # update db
             cursor.execute(
                 f"UPDATE `csg_automations`.`eventNotification` SET `thirtyMinutes` = 1 WHERE `eventId` = {eventid}")
