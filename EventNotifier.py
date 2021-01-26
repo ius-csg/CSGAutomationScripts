@@ -81,7 +81,6 @@ if not events:
 for event in events:
     eventid = event['id']
     print(f"Processing {eventid}:'{event['summary']}'")
-    epsilon = 30
     now = datetime.datetime.now()
     # Some events are deadlines which we put in as events that last all day.
     # These events will be logged sparely in the db and have a different schedule
@@ -109,53 +108,52 @@ for event in events:
         # deadline1d = (parse(event['end']['date'])).replace(hour=12)
 
         # 1 week alert
-        if data[2] == 0 and (-epsilon < ((now-deadline1w).total_seconds())/60 < epsilon):
+        if data[2] == 0 and (now.day == deadline1w.day):
             # update db
             cursor.execute(
-                f"UPDATE `csg_automations`.`eventNotification` SET `oneWeek` = 1 WHERE `eventId` = {eventid};")
+                f"UPDATE `csg_automations`.`eventNotification` SET `oneWeek` = 1 WHERE `eventId` = '{eventid}'")
             conn.commit()
             # send alert
             webhook = DiscordWebhook(url=uri,
                                      content=f"@everyone Hey reminder bot here,\n The CSG has a deadline for "
-                                             f"{event['summary']} in 1 week. "
+                                             f"'{event['summary']}' in 1 week.\n"
                                              f"Please do not forget to sign up if you are interested. \n"
-                                             f"------------------------------"
-                                             f"Details: {event['description']}")
+                                             f"------------------------------\n"
+                                             f"Details: \n\n {event['description']}")
             response = webhook.execute()
             print(response)
 
             # Send an email here if you want
 
         # 3 day alert
-        if data[3] == 0 and (-epsilon < ((now-deadline3d).total_seconds())/60 < epsilon):
+        if data[3] == 0 and (now.day == deadline3d.day):
             # update db
             cursor.execute(
-                f"UPDATE `csg_automations`.`eventNotification` SET `threeDay` = 1 WHERE `eventId` = {eventid};")
+                f"UPDATE `csg_automations`.`eventNotification` SET `threeDay` = 1 WHERE `eventId` = '{eventid}'")
             conn.commit()
             # send alert
             webhook = DiscordWebhook(url=uri,
                                      content=f"@everyone Hey reminder bot here,\n The CSG has a deadline for"
-                                             f" {event['summary']} in 3 days. "
-                                             f"Please do not forget to sign up if you are interested. \n"
-                                             f"------------------------------"
-                                             f"Details: {event['description']}")
+                                             f" '{event['summary']}' in 3 days. \n"
+                                             f"Do not forget to sign up if you are interested. \n"
+                                             f"------------------------------\n"
+                                             f"Details: \n\n {event['description']}")
             response = webhook.execute()
             print(response)
 
         # 1 day alert
-        if data[4] == 0 and (-epsilon < ((now-deadline1d).total_seconds())/60 < epsilon):
+        if data[4] == 0 and (now.day == deadline1d.day):
             # update db
             cursor.execute(
-                f"UPDATE `csg_automations`.`eventNotification` SET `oneDay` = 1 WHERE `eventId` = {eventid};")
+                f"UPDATE `csg_automations`.`eventNotification` SET `oneDay` = 1 WHERE `eventId` = '{eventid}'")
             conn.commit()
             # send alert
             webhook = DiscordWebhook(url=uri,
                                      content=f"@everyone Hey reminder bot here,\n The CSG has a deadline for"
-                                             f" {event['summary']} in 1 days."
-                                             f" Please do not forget to sign up if you are interested. \n"
-                                             f"Tomorrow will be the last day to sign up."
-                                             f"------------------------------"
-                                             f"Details: {event['description']}")
+                                             f" '{event['summary']}' tomorrow.\n"
+                                             f"Do not forget to sign up if you are interested. \n"
+                                             f"------------------------------\n"
+                                             f"Details: \n\n {event['description']}")
             response = webhook.execute()
             print(response)
 
@@ -165,6 +163,7 @@ for event in events:
         event3d = (eventTime - datetime.timedelta(days=3)).replace(tzinfo=None)
         event1d = (eventTime - datetime.timedelta(days=1)).replace(tzinfo=None)
         event30min = (eventTime - datetime.timedelta(minutes=30)).replace(tzinfo=None)
+        envTime = eventTime.strftime("%H:%M:%S")
 
         # if event exists in db get details otherwise create it
         cursor.execute(f"SELECT * FROM csg_automations.eventNotification where eventID = '{eventid}'")
@@ -178,48 +177,48 @@ for event in events:
             data = cursor.fetchone()
 
         # send an alert for 3 days before
-        if data[2] == 0 and (-epsilon < ((now-event3d).total_seconds())/60 < epsilon):
+        if data[2] == 0 and (now.day == event3d.day):
             # update db
             cursor.execute(
                 f"UPDATE `csg_automations`.`eventNotification` SET `threeday` = 1 WHERE `eventId` = {eventid}")
             conn.commit()
             # send alert
             webhook = DiscordWebhook(url=uri, content=f"@everyone Hey reminder bot here,\n CSG will be hosting "
-                                                      f"{event['summary']} in 3 days"
-                                                      f" on the {eventTime.day} at {eventTime.time}."
+                                                      f"'{event['summary']}' in 3 days"
+                                                      f" on the {eventTime.day} at {envTime}.\n"
                                                       f"We hope to see everyone there!\n"
-                                                      f"------------------------------"
-                                                      f"Details: {event['description']}")
+                                                      f"------------------------------\n"
+                                                      f"Details: \n\n {event['description']}")
             response = webhook.execute()
             print(response)
 
         # send an alert for 1 day before
-        if data[4] == 0 and (-epsilon < ((now-event1d).total_seconds())/60 < epsilon):
+        if data[4] == 0 and (now.day == event1d.day):
             # update db
             cursor.execute(
-                f"UPDATE `csg_automations`.`eventNotification` SET `oneDay` = 1 WHERE `eventId` = {eventid}")
+                f"UPDATE `csg_automations`.`eventNotification` SET `oneDay` = 1 WHERE `eventId` = '{eventid}'")
             conn.commit()
             # send alert
             webhook = DiscordWebhook(url=uri,
-                                     content=f"@everyone Hey reminder bot here,\n CSG will be hosting {event['summary']}"
-                                             f" tomorrow, the {eventTime.day} at {eventTime.time}. "
+                                     content=f"@everyone Hey reminder bot here,\n CSG will be hosting '{event['summary']}'"
+                                             f" tomorrow, the {eventTime.day} at {envTime}.\n "
                                              f"We hope to see everyone there!\n"
-                                             f"------------------------------"
-                                             f"Details: {event['description']}")
+                                             f"------------------------------\n"
+                                             f"Details: \n\n {event['description']}")
             response = webhook.execute()
             print(response)
 
         # send an alert for 30 minutes before
-        if data[5] == 0 and (-epsilon < ((now-event30min).total_seconds())/60 < epsilon):
+        if data[5] == 0 and (-30 < ((now-event30min).total_seconds())/60 < 30):
             # update db
             cursor.execute(
-                f"UPDATE `csg_automations`.`eventNotification` SET `thirtyMinutes` = 1 WHERE `eventId` = {eventid}")
+                f"UPDATE `csg_automations`.`eventNotification` SET `thirtyMinutes` = 1 WHERE `eventId` = '{eventid}'")
             conn.commit()
             # send alert
-            webhook = DiscordWebhook(url=uri, content=f"@everyone Hey reminder bot here,\n CSG will be hosting "
-                                                      f"{event['summary']} in 30 minutes!"
+            webhook = DiscordWebhook(url=uri, content=f"@everyone\n Hey reminder bot here,\n CSG will be hosting "
+                                                      f"'{event['summary']}' in 30 minutes!\n"
                                                       f"Don't forget to join in!\n"
-                                                      f"------------------------------"
-                                                      f"Details: {event['description']}")
+                                                      f"------------------------------\n"
+                                                      f"Details: \n\n{event['description']}")
             response = webhook.execute()
             print(response)
