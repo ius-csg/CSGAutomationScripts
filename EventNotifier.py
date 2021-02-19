@@ -209,7 +209,7 @@ for event in events:
             print(response)
 
         # send an alert for 30 minutes before
-        if data[5] == 0 and (-30 < ((now-event30min).total_seconds())/60 < 30):
+        if data[5] == 0 and (-1 < ((now-event30min).total_seconds())/60 < 30):
             # update db
             cursor.execute(
                 f"UPDATE `csg_automations`.`eventNotification` SET `thirtyMinutes` = 1 WHERE `eventId` = '{eventid}'")
